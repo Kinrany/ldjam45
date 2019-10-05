@@ -3,7 +3,6 @@
     <vue-p5
       @preload="preload"
       @setup="setup"
-      @update="update"
       @draw="draw"
       @keypressed="keyPressed"
       @mousemoved="mouseMoved"
@@ -15,7 +14,17 @@
 <script>
 import VueP5 from "vue-p5";
 
+// width and height of a tile in pixels
 const TILE = 64;
+// tiles on screen, horizontally and vertically
+const SCREEN = 8;
+
+const KEYCODES = {
+  a: 65,
+  d: 68,
+  s: 83,
+  w: 87
+};
 
 export default {
   name: "p5-example",
@@ -24,27 +33,91 @@ export default {
   },
   data: () => ({
     images: {},
-    items: [[0, 0, "robot"]]
+    items: [{ pos: [0, 0], imageName: "robot" }],
+    robotActions: []
   }),
-  computed: {},
+  computed: {
+    robotId() {
+      return this.items.findIndex(
+        ({ pos, imageName }) => imageName === "robot"
+      );
+    }
+  },
   methods: {
     preload(sketch) {
-      const imageNames = ["robot"];
+      const imageNames = ["robot", "sand"];
       for (const name of imageNames) {
         this.images[name] = sketch.loadImage(`static/${name}.png`);
       }
     },
     setup(sketch) {
-      sketch.createCanvas(400, 400);
+      sketch.createCanvas(TILE * SCREEN, TILE * SCREEN);
     },
-    update(sketch) {},
+    update(sketch) {
+      const [action, ...tail] = this.robotActions;
+      this.robotActions = tail;
+
+      if (!action) return;
+      const [_, direction] = action;
+
+      const robotId = this.robotId;
+      const robot = this.items[robotId];
+      let {
+        pos: [x, y]
+      } = robot;
+
+      switch (direction) {
+        case "up":
+          y -= 1;
+          break;
+        case "down":
+          y += 1;
+          break;
+        case "left":
+          x -= 1;
+          break;
+        case "right":
+          x += 1;
+          break;
+      }
+
+      this.items[robotId] = { ...robot, pos: [x, y] };
+    },
     draw(sketch) {
-      for (const item of this.items) {
-        const [x, y, imageName] = item;
+      this.update();
+
+      sketch.background(0, 0, 0);
+
+      for (let x = 0; x < SCREEN; ++x) {
+        for (let y = 0; y < SCREEN; ++y) {
+          sketch.image(this.images.sand, x * TILE, y * TILE, TILE, TILE);
+        }
+      }
+
+      for (let i = 0; i < this.items.length; ++i) {
+        const {
+          pos: [x, y],
+          imageName
+        } = this.items[i];
         sketch.image(this.images[imageName], x * TILE, y * TILE, TILE, TILE);
       }
     },
-    keyPressed({ keyCode }) {},
+    keyPressed({ keyCode }) {
+      switch (keyCode) {
+        case KEYCODES.a:
+          this.robotActions = [...this.robotActions, ["move", "left"]];
+          break;
+        case KEYCODES.d:
+          this.robotActions = [...this.robotActions, ["move", "right"]];
+          break;
+        case KEYCODES.s:
+          this.robotActions = [...this.robotActions, ["move", "down"]];
+          break;
+        case KEYCODES.w:
+          this.robotActions = [...this.robotActions, ["move", "up"]];
+          break;
+      }
+    },
     mouseMoved({ mouseX, mouseY, pmouseX, pmouseY }) {},
     mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {}
   }
