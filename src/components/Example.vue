@@ -36,7 +36,6 @@ export default {
     },
     setup(sketch) {
       sketch.createCanvas(400, 400);
-      console.log("bar");
     },
     update(sketch) {},
     draw(sketch) {
