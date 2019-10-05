@@ -1,10 +1,10 @@
-# vue-p5-example
+# Ludum Dare 45
 
-Example project for [vue-p5](https://github.com/Kinrany/vue-p5).
+Start with nothing except a robot that keeps dying
 
-## Demo
+## Play
 
-https://kinrany.github.io/vue-p5-example/
+https://kinrany.github.io/ldjam45/
 
 ## Build
 

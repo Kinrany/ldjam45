@@ -1,7 +1,7 @@
 {
-  "name": "vue-p5-example",
+  "name": "ldjam45",
   "version": "1.0.0",
-  "description": "Example project for vue-p5",
+  "description": "A game where you start with nothing except a robot that keeps dying",
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server -w",
@@ -10,18 +10,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kinrany/vue-p5-example.git"
+    "url": "git+https://github.com/Kinrany/ldjam45.git"
   },
   "keywords": [
     "Vue",
-    "p5js"
+    "p5js",
+    "vue-p5",
+    "ldjam",
+    "ludum dare"
   ],
   "author": "Ruslan Fadeev",
   "license": "LGPL-2.1",
   "bugs": {
-    "url": "https://github.com/Kinrany/vue-p5-example/issues"
+    "url": "https://github.com/Kinrany/ldjam45/issues"
   },
-  "homepage": "https://github.com/Kinrany/vue-p5-example#readme",
+  "homepage": "https://github.com/Kinrany/ldjam45#readme",
   "devDependencies": {
     "css-loader": "^0.28.11",
     "vue-loader": "^15.4.2",
