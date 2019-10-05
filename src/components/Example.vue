@@ -81,6 +81,10 @@ export default {
           break;
       }
 
+      // clamp position to prevent the robot from leaving the screen
+      x = Math.max(0, Math.min(x, SCREEN));
+      y = Math.max(0, Math.min(y, SCREEN));
+
       this.items[robotId] = { ...robot, pos: [x, y] };
     },
     draw(sketch) {
