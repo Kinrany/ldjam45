@@ -17,5 +17,8 @@ module.exports = {
   },
   plugins: [
     new VueLoaderPlugin()
-  ]
+  ],
+  devServer: {
+    writeToDisk: true
+  }
 };
