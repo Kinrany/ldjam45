@@ -73,6 +73,7 @@ export default {
         case "respawn":
           if (!this.robot) break;
           this.setRobot({ ...this.robot, imageName: "dead" });
+          this.items = [...this.items, { pos: [0, 0], imageName: "robot" }];
           break;
 
         case "move":
