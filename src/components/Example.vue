@@ -22,6 +22,7 @@ const SCREEN = 8;
 const KEYCODES = {
   a: 65,
   d: 68,
+  r: 82,
   s: 83,
   w: 87
 };
@@ -41,11 +42,14 @@ export default {
       return this.items.findIndex(
         ({ pos, imageName }) => imageName === "robot"
       );
+    },
+    robot() {
+      return this.robotId === -1 ? undefined : this.items[this.robotId];
     }
   },
   methods: {
     preload(sketch) {
-      const imageNames = ["robot", "sand"];
+      const imageNames = ["robot", "sand", "dead"];
       for (const name of imageNames) {
         this.images[name] = sketch.loadImage(`static/${name}.png`);
       }
@@ -54,38 +58,51 @@ export default {
       sketch.createCanvas(TILE * SCREEN, TILE * SCREEN);
     },
     update(sketch) {
+      if (!this.robot) {
+        this.robotActions = [];
+        return;
+      }
+
       const [action, ...tail] = this.robotActions;
       this.robotActions = tail;
 
       if (!action) return;
-      const [_, direction] = action;
 
-      const robotId = this.robotId;
-      const robot = this.items[robotId];
-      let {
-        pos: [x, y]
-      } = robot;
+      const [name, ...actionData] = action;
+      switch (name) {
+        case "respawn":
+          if (!this.robot) break;
+          this.setRobot({ ...this.robot, imageName: "dead" });
+          break;
 
-      switch (direction) {
-        case "up":
-          y -= 1;
-          break;
-        case "down":
-          y += 1;
-          break;
-        case "left":
-          x -= 1;
-          break;
-        case "right":
-          x += 1;
+        case "move":
+          const [direction] = actionData;
+          let {
+            pos: [x, y]
+          } = this.robot;
+
+          switch (direction) {
+            case "up":
+              y -= 1;
+              break;
+            case "down":
+              y += 1;
+              break;
+            case "left":
+              x -= 1;
+              break;
+            case "right":
+              x += 1;
+              break;
+          }
+
+          // clamp position to prevent the robot from leaving the screen
+          x = Math.max(0, Math.min(x, SCREEN));
+          y = Math.max(0, Math.min(y, SCREEN));
+
+          this.setRobot({ ...this.robot, pos: [x, y] });
           break;
       }
-
-      // clamp position to prevent the robot from leaving the screen
-      x = Math.max(0, Math.min(x, SCREEN));
-      y = Math.max(0, Math.min(y, SCREEN));
-
-      this.items[robotId] = { ...robot, pos: [x, y] };
     },
     draw(sketch) {
       this.update();
@@ -120,10 +137,20 @@ export default {
         case KEYCODES.w:
           this.robotActions = [...this.robotActions, ["move", "up"]];
           break;
+        case KEYCODES.r:
+          this.robotActions = [...this.robotActions, ["respawn"]];
+          break;
       }
     },
     mouseMoved({ mouseX, mouseY, pmouseX, pmouseY }) {},
-    mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {}
+    mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {},
+    setRobot(item) {
+      this.items = [
+        ...this.items.slice(0, this.robotId),
+        item,
+        ...this.items.slice(this.robotId + 1)
+      ];
+    }
   }
 };
 </script>

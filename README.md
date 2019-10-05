@@ -6,6 +6,11 @@ Start with nothing except a robot that keeps dying
 
 https://kinrany.github.io/ldjam45/
 
+## Controls
+
+WASD - movement \
+R - respawn
+
 ## Build
 
 ```
