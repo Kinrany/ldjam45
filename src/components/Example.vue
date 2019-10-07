@@ -8,6 +8,11 @@
       @mousemoved="mouseMoved"
       @mousedragged="mouseDragged"
     ></vue-p5>
+    <div>
+      Zoom:
+      <button @click="zoom += 1">+</button>
+      <button @click="zoom -= 1">-</button>
+    </div>
   </div>
 </template>
 
@@ -17,9 +22,13 @@ import VueP5 from "vue-p5";
 // width and height of a tile in pixels
 const TILE = 64;
 // tiles on screen, horizontally and vertically
-const SCREEN = 8;
+const SCREEN = 11;
 
 const KEYCODES = {
+  arrowLeft: 37,
+  arrowUp: 38,
+  arrowRight: 39,
+  arrowDown: 40,
   a: 65,
   d: 68,
   r: 82,
@@ -27,15 +36,35 @@ const KEYCODES = {
   w: 87
 };
 
+const DIRECTIONS = {
+  down: [0, 1],
+  left: [-1, 0],
+  right: [1, 0],
+  up: [0, -1]
+};
+
+const images = new Map();
+
+const range = (a, b) =>
+  Array(b - a)
+    .fill(0)
+    .map((_, i) => a + i);
+const inRange = (a, x, b) => a <= x && x < b;
+const clamp = (a, x, b) => Math.max(a, Math.min(x, b));
+
 export default {
-  name: "p5-example",
+  name: "ldjam45-game",
   components: {
     "vue-p5": VueP5
   },
   data: () => ({
-    images: {},
-    items: [{ pos: [0, 0], imageName: "robot" }],
-    robotActions: []
+    items: [
+      { pos: [0, 0], imageName: "spawn" },
+      { pos: [0, 0], imageName: "robot" }
+    ],
+    robotActions: [],
+    zoom: 0,
+    cameraOffset: [0, 0]
   }),
   computed: {
     robotId() {
@@ -45,13 +74,19 @@ export default {
     },
     robot() {
       return this.robotId === -1 ? undefined : this.items[this.robotId];
+    },
+    tileOnScreen() {
+      return TILE * Math.pow(2, this.zoom);
+    },
+    tilesOnScreen() {
+      return SCREEN / Math.pow(2, this.zoom);
     }
   },
   methods: {
     preload(sketch) {
-      const imageNames = ["robot", "sand", "dead"];
+      const imageNames = ["robot", "sand", "dead", "spawn"];
       for (const name of imageNames) {
-        this.images[name] = sketch.loadImage(`static/${name}.png`);
+        images.set(name, sketch.loadImage(`static/${name}.png`));
       }
     },
     setup(sketch) {
@@ -59,7 +94,10 @@ export default {
     },
     update(sketch) {
       if (!this.robot) {
-        this.robotActions = [];
+        if (this.robotActions.length > 0) {
+          // prevent unnecessary updates
+          this.robotActions = [];
+        }
         return;
       }
 
@@ -77,31 +115,10 @@ export default {
           break;
 
         case "move":
+          const [x, y] = this.robot.pos;
           const [direction] = actionData;
-          let {
-            pos: [x, y]
-          } = this.robot;
-
-          switch (direction) {
-            case "up":
-              y -= 1;
-              break;
-            case "down":
-              y += 1;
-              break;
-            case "left":
-              x -= 1;
-              break;
-            case "right":
-              x += 1;
-              break;
-          }
-
-          // clamp position to prevent the robot from leaving the screen
-          x = Math.max(0, Math.min(x, SCREEN));
-          y = Math.max(0, Math.min(y, SCREEN));
-
-          this.setRobot({ ...this.robot, pos: [x, y] });
+          const [dx, dy] = DIRECTIONS[direction];
+          this.setRobot({ ...this.robot, pos: [x + dx, y + dy] });
           break;
       }
     },
@@ -110,47 +127,87 @@ export default {
 
       sketch.background(0, 0, 0);
 
-      for (let x = 0; x < SCREEN; ++x) {
-        for (let y = 0; y < SCREEN; ++y) {
-          sketch.image(this.images.sand, x * TILE, y * TILE, TILE, TILE);
-        }
-      }
+      // background tiles
+      range(0, this.tilesOnScreen).forEach(x => {
+        range(0, this.tilesOnScreen).forEach(y => {
+          sketch.image(
+            images.get("sand"),
+            x * this.tileOnScreen,
+            y * this.tileOnScreen,
+            this.tileOnScreen,
+            this.tileOnScreen
+          );
+        });
+      });
 
-      for (let i = 0; i < this.items.length; ++i) {
-        const {
-          pos: [x, y],
-          imageName
-        } = this.items[i];
-        sketch.image(this.images[imageName], x * TILE, y * TILE, TILE, TILE);
-      }
+      // items
+      const items = this.items.filter(item => {
+        const [x, y] = item.pos;
+        const [cx, cy] = this.cameraOffset;
+        return (
+          inRange(cx, x, cx + this.tilesOnScreen) &&
+          inRange(cy, y, cy + this.tilesOnScreen)
+        );
+      });
+      items.forEach(item => {
+        const [x, y] = item.pos;
+        const [cx, cy] = this.cameraOffset;
+        sketch.image(
+          images.get(item.imageName),
+          (x - cx) * this.tileOnScreen,
+          (y - cy) * this.tileOnScreen,
+          this.tileOnScreen,
+          this.tileOnScreen
+        );
+      });
     },
     keyPressed({ keyCode }) {
       switch (keyCode) {
         case KEYCODES.a:
-          this.robotActions = [...this.robotActions, ["move", "left"]];
-          break;
         case KEYCODES.d:
-          this.robotActions = [...this.robotActions, ["move", "right"]];
-          break;
         case KEYCODES.s:
-          this.robotActions = [...this.robotActions, ["move", "down"]];
+        case KEYCODES.w: {
+          const direction = {
+            [KEYCODES.a]: "left",
+            [KEYCODES.d]: "right",
+            [KEYCODES.s]: "down",
+            [KEYCODES.w]: "up"
+          }[keyCode];
+          this.robotActions = [...this.robotActions, ["move", direction]];
           break;
-        case KEYCODES.w:
-          this.robotActions = [...this.robotActions, ["move", "up"]];
-          break;
+        }
         case KEYCODES.r:
           this.robotActions = [...this.robotActions, ["respawn"]];
           break;
+        case KEYCODES.arrowDown:
+        case KEYCODES.arrowLeft:
+        case KEYCODES.arrowRight:
+        case KEYCODES.arrowUp: {
+          const direction = {
+            [KEYCODES.arrowDown]: "down",
+            [KEYCODES.arrowLeft]: "left",
+            [KEYCODES.arrowRight]: "right",
+            [KEYCODES.arrowUp]: "up"
+          }[keyCode];
+          const [x, y] = this.cameraOffset;
+          const [dx, dy] = DIRECTIONS[direction];
+          this.cameraOffset = [x + dx, y + dy];
+          break;
+        }
       }
     },
     mouseMoved({ mouseX, mouseY, pmouseX, pmouseY }) {},
     mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {},
     setRobot(item) {
-      this.items = [
-        ...this.items.slice(0, this.robotId),
-        item,
-        ...this.items.slice(this.robotId + 1)
-      ];
+      if (this.robotId) {
+        this.items = [
+          ...this.items.slice(0, this.robotId),
+          item,
+          ...this.items.slice(this.robotId + 1)
+        ];
+      } else {
+        this.items = [...this.items, item];
+      }
     }
   }
 };

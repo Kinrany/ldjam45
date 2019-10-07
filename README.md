@@ -9,7 +9,8 @@ https://kinrany.github.io/ldjam45/
 ## Controls
 
 WASD - movement \
-R - respawn
+R - respawn \
+Arrows - camera
 
 ## Build
 
