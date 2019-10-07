@@ -59,8 +59,8 @@ export default {
   },
   data: () => ({
     items: [
-      { pos: [0, 0], imageName: "spawn" },
-      { pos: [0, 0], imageName: "robot" }
+      { pos: [3, 3], imageName: "spawn" },
+      { pos: [4, 3], imageName: "robot" }
     ],
     robotActions: [],
     zoom: 0,
@@ -110,15 +110,15 @@ export default {
       switch (name) {
         case "respawn":
           if (!this.robot) break;
-          this.setRobot({ ...this.robot, imageName: "dead" });
-          this.items = [...this.items, { pos: [0, 0], imageName: "robot" }];
+          this.setItem(this.robotId, { ...this.robot, imageName: "dead" });
+          this.items = [...this.items, { pos: [3, 3], imageName: "robot" }];
           break;
 
         case "move":
           const [x, y] = this.robot.pos;
           const [direction] = actionData;
           const [dx, dy] = DIRECTIONS[direction];
-          this.setRobot({ ...this.robot, pos: [x + dx, y + dy] });
+          this.setItem(this.robotId, { ...this.robot, pos: [x + dx, y + dy] });
           break;
       }
     },
@@ -198,16 +198,15 @@ export default {
     },
     mouseMoved({ mouseX, mouseY, pmouseX, pmouseY }) {},
     mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {},
-    setRobot(item) {
-      if (this.robotId) {
-        this.items = [
-          ...this.items.slice(0, this.robotId),
-          item,
-          ...this.items.slice(this.robotId + 1)
-        ];
-      } else {
-        this.items = [...this.items, item];
+    setItem(itemId, item) {
+      if (!this.items[itemId]) {
+        throw new Error(`Item id ${itemId} does not exist`);
       }
+      this.items = [
+        ...this.items.slice(0, itemId),
+        item,
+        ...this.items.slice(itemId + 1)
+      ];
     }
   }
 };
