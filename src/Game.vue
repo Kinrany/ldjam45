@@ -237,8 +237,9 @@ export default {
         return;
       }
 
-      const x = Math.floor(mouseX / this.tileOnCanvas);
-      const y = Math.floor(mouseY / this.tileOnCanvas);
+      const [cx, cy] = this.cameraOffset;
+      const x = Math.floor(mouseX / this.tileOnCanvas) + cx;
+      const y = Math.floor(mouseY / this.tileOnCanvas) + cy;
       this.addRobotAction(["interact", [x, y]]);
     },
     addItem(item) {
