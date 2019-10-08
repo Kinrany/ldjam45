@@ -60,6 +60,10 @@ const moved = (robot, [dx, dy]) => {
   const [x, y] = robot.pos;
   return { ...robot, pos: [x + dx, y + dy] };
 };
+const charged = (robot, energy) => ({
+  ...robot,
+  energy: robot.energy + energy
+});
 
 const butcher = dead => ({ ...dead, imageName: "battery" });
 
@@ -76,10 +80,10 @@ export default {
   }),
   computed: {
     robotId() {
-      return this.items.findIndex(item => item.imageName === "robot");
+      return this.items.findIndex(item => item && item.imageName === "robot");
     },
     robot() {
-      return this.items.find(item => item.imageName === "robot");
+      return this.items.find(item => item && item.imageName === "robot");
     },
     // width and height of a tile in canvas pixels
     tileOnCanvas() {
@@ -117,18 +121,34 @@ export default {
       const [name, ...actionData] = action;
       switch (name) {
         case "respawn":
-          if (!this.robot) break;
           this.setItem(this.robotId, dead(this.robot));
-          const spawn = this.items.find(item => item.imageName === "spawn");
+          const spawn = this.items.find(
+            item => item && item.imageName === "spawn"
+          );
           this.addItem(robot(spawn.pos));
           break;
 
         case "move":
-          const [x, y] = this.robot.pos;
           const [direction] = actionData;
+          const [x, y] = this.robot.pos;
           const [dx, dy] = DIRECTIONS[direction];
           this.setItem(this.robotId, moved(this.robot, [dx, dy]));
           break;
+
+        case "interact":
+          const [pos] = actionData;
+          const items = this.itemsAt(pos);
+          for (const item of items) {
+            if (item.imageName === "dead") {
+              this.setItem(item.id, butcher(item));
+              break;
+            }
+            if (item.imageName === "battery") {
+              const battery = this.removeItem(item.id);
+              this.setItem(this.robotId, charged(this.robot, battery.energy));
+              break;
+            }
+          }
       }
     },
     draw(sketch) {
@@ -151,6 +171,7 @@ export default {
 
       // items
       const items = this.items.filter(item => {
+        if (!item) return false;
         const [x, y] = item.pos;
         const [cx, cy] = this.cameraOffset;
         return (
@@ -182,11 +203,11 @@ export default {
             [KEYCODES.s]: "down",
             [KEYCODES.w]: "up"
           }[keyCode];
-          this.robotActions = [...this.robotActions, ["move", direction]];
+          this.addRobotAction(["move", direction]);
           break;
         }
         case KEYCODES.r:
-          this.robotActions = [...this.robotActions, ["respawn"]];
+          this.addRobotAction(["respawn"]);
           break;
         case KEYCODES.arrowDown:
         case KEYCODES.arrowLeft:
@@ -215,12 +236,7 @@ export default {
 
       const x = Math.floor(mouseX / this.tileOnCanvas);
       const y = Math.floor(mouseY / this.tileOnCanvas);
-      const items = this.itemsAt([x, y]);
-
-      const item = items.find(item => item.imageName === "dead");
-      if (item) {
-        this.setItem(item.id, butcher(item));
-      }
+      this.addRobotAction(["interact", [x, y]]);
     },
     addItem(item) {
       const id = this.items.length;
@@ -230,18 +246,24 @@ export default {
       if (!this.items[itemId]) {
         throw new Error(`Item id ${itemId} does not exist`);
       }
-      this.items = [
-        ...this.items.slice(0, itemId),
-        item,
-        ...this.items.slice(itemId + 1)
-      ];
+      this.items.splice(itemId, 1, item);
+      this.items = this.items;
+    },
+    removeItem(itemId) {
+      const item = this.items[itemId];
+      this.items[itemId] = undefined;
+      return item;
     },
     itemsAt(pos) {
       const [x, y] = pos;
       return this.items.filter(item => {
+        if (!item) return false;
         const [itemX, itemY] = item.pos;
         return x === itemX && y === itemY;
       });
+    },
+    addRobotAction(action) {
+      this.robotActions = [...this.robotActions, action];
     }
   }
 };
