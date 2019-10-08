@@ -19,10 +19,10 @@
 <script>
 import VueP5 from "vue-p5";
 
-// width and height of a tile in pixels
+// width and height of a tile .png file
 const TILE = 64;
-// tiles on screen, horizontally and vertically
-const SCREEN = 11;
+// width and height of the canvas in window pixels
+const CANVAS = TILE * 8;
 
 const KEYCODES = {
   arrowLeft: 37,
@@ -59,8 +59,8 @@ export default {
   },
   data: () => ({
     items: [
-      { pos: [3, 3], imageName: "spawn" },
-      { pos: [4, 3], imageName: "robot" }
+      { pos: [2, 2], imageName: "spawn" },
+      { pos: [3, 2], imageName: "robot" }
     ],
     robotActions: [],
     zoom: 0,
@@ -68,18 +68,18 @@ export default {
   }),
   computed: {
     robotId() {
-      return this.items.findIndex(
-        ({ pos, imageName }) => imageName === "robot"
-      );
+      return this.items.findIndex(item => item.imageName === "robot");
     },
     robot() {
       return this.robotId === -1 ? undefined : this.items[this.robotId];
     },
+    // width and height of a tile in screen pixels
     tileOnScreen() {
       return TILE * Math.pow(2, this.zoom);
     },
+    // number of tiles that fit on screen at once
     tilesOnScreen() {
-      return SCREEN / Math.pow(2, this.zoom);
+      return Math.ceil(CANVAS / this.tileOnScreen);
     }
   },
   methods: {
@@ -90,7 +90,7 @@ export default {
       }
     },
     setup(sketch) {
-      sketch.createCanvas(TILE * SCREEN, TILE * SCREEN);
+      sketch.createCanvas(CANVAS, CANVAS);
     },
     update(sketch) {
       if (!this.robot) {
@@ -111,7 +111,8 @@ export default {
         case "respawn":
           if (!this.robot) break;
           this.setItem(this.robotId, { ...this.robot, imageName: "dead" });
-          this.items = [...this.items, { pos: [3, 3], imageName: "robot" }];
+          const spawn = this.items.find(item => item.imageName === "spawn");
+          this.addItem({ pos: spawn.pos, imageName: "robot" });
           break;
 
         case "move":
@@ -198,6 +199,9 @@ export default {
     },
     mouseMoved({ mouseX, mouseY, pmouseX, pmouseY }) {},
     mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {},
+    addItem(item) {
+      this.items = [...this.items, item];
+    },
     setItem(itemId, item) {
       if (!this.items[itemId]) {
         throw new Error(`Item id ${itemId} does not exist`);
