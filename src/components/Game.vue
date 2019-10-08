@@ -5,9 +5,9 @@
       @setup="setup"
       @draw="draw"
       @keypressed="keyPressed"
-      @mousemoved="mouseMoved"
-      @mousedragged="mouseDragged"
+      @mouseclicked="mouseClicked"
     ></vue-p5>
+    <div>Energy: {{robot ? robot.energy : 0}}</div>
     <div>
       Zoom:
       <button @click="zoom += 1">+</button>
@@ -52,16 +52,26 @@ const range = (a, b) =>
 const inRange = (a, x, b) => a <= x && x < b;
 const clamp = (a, x, b) => Math.max(a, Math.min(x, b));
 
+const robot = pos => ({ pos, imageName: "robot", energy: 10 });
+const spawn = pos => ({ pos, imageName: "spawn" });
+
+const dead = robot => ({ ...robot, imageName: "dead" });
+const moved = (robot, [dx, dy]) => {
+  const [x, y] = robot.pos;
+  return { ...robot, pos: [x + dx, y + dy] };
+};
+
+const butcher = dead => ({ ...dead, imageName: "battery" });
+
+const isAt = (item, pos) => item.pos[0] === pos[0] && item.pos[1] === pos[1];
+
 export default {
   name: "ldjam45-game",
   components: {
     "vue-p5": VueP5
   },
   data: () => ({
-    items: [
-      { pos: [2, 2], imageName: "spawn" },
-      { pos: [3, 2], imageName: "robot" }
-    ],
+    items: [spawn([2, 2]), robot([3, 2])],
     robotActions: [],
     zoom: 0,
     cameraOffset: [0, 0]
@@ -71,20 +81,20 @@ export default {
       return this.items.findIndex(item => item.imageName === "robot");
     },
     robot() {
-      return this.robotId === -1 ? undefined : this.items[this.robotId];
+      return this.items.find(item => item.imageName === "robot");
     },
-    // width and height of a tile in screen pixels
-    tileOnScreen() {
+    // width and height of a tile in canvas pixels
+    tileOnCanvas() {
       return TILE * Math.pow(2, this.zoom);
     },
-    // number of tiles that fit on screen at once
-    tilesOnScreen() {
-      return Math.ceil(CANVAS / this.tileOnScreen);
+    // number of tiles that fit on canvas at once
+    tilesOnCanvas() {
+      return Math.ceil(CANVAS / this.tileOnCanvas);
     }
   },
   methods: {
     preload(sketch) {
-      const imageNames = ["robot", "sand", "dead", "spawn"];
+      const imageNames = ["robot", "sand", "dead", "spawn", "battery"];
       for (const name of imageNames) {
         images.set(name, sketch.loadImage(`static/${name}.png`));
       }
@@ -110,16 +120,16 @@ export default {
       switch (name) {
         case "respawn":
           if (!this.robot) break;
-          this.setItem(this.robotId, { ...this.robot, imageName: "dead" });
+          this.setItem(this.robotId, dead(this.robot));
           const spawn = this.items.find(item => item.imageName === "spawn");
-          this.addItem({ pos: spawn.pos, imageName: "robot" });
+          this.addItem(robot(spawn.pos));
           break;
 
         case "move":
           const [x, y] = this.robot.pos;
           const [direction] = actionData;
           const [dx, dy] = DIRECTIONS[direction];
-          this.setItem(this.robotId, { ...this.robot, pos: [x + dx, y + dy] });
+          this.setItem(this.robotId, moved(this.robot, [dx, dy]));
           break;
       }
     },
@@ -129,14 +139,14 @@ export default {
       sketch.background(0, 0, 0);
 
       // background tiles
-      range(0, this.tilesOnScreen).forEach(x => {
-        range(0, this.tilesOnScreen).forEach(y => {
+      range(0, this.tilesOnCanvas).forEach(x => {
+        range(0, this.tilesOnCanvas).forEach(y => {
           sketch.image(
             images.get("sand"),
-            x * this.tileOnScreen,
-            y * this.tileOnScreen,
-            this.tileOnScreen,
-            this.tileOnScreen
+            x * this.tileOnCanvas,
+            y * this.tileOnCanvas,
+            this.tileOnCanvas,
+            this.tileOnCanvas
           );
         });
       });
@@ -146,8 +156,8 @@ export default {
         const [x, y] = item.pos;
         const [cx, cy] = this.cameraOffset;
         return (
-          inRange(cx, x, cx + this.tilesOnScreen) &&
-          inRange(cy, y, cy + this.tilesOnScreen)
+          inRange(cx, x, cx + this.tilesOnCanvas) &&
+          inRange(cy, y, cy + this.tilesOnCanvas)
         );
       });
       items.forEach(item => {
@@ -155,10 +165,10 @@ export default {
         const [cx, cy] = this.cameraOffset;
         sketch.image(
           images.get(item.imageName),
-          (x - cx) * this.tileOnScreen,
-          (y - cy) * this.tileOnScreen,
-          this.tileOnScreen,
-          this.tileOnScreen
+          (x - cx) * this.tileOnCanvas,
+          (y - cy) * this.tileOnCanvas,
+          this.tileOnCanvas,
+          this.tileOnCanvas
         );
       });
     },
@@ -197,8 +207,18 @@ export default {
         }
       }
     },
-    mouseMoved({ mouseX, mouseY, pmouseX, pmouseY }) {},
-    mouseDragged({ mouseX, mouseY, pmouseX, pmouseY }) {},
+    mouseClicked({ mouseX, mouseY }) {
+      if (inRange(0, mouseX, CANVAS) && inRange(0, mouseY, CANVAS)) {
+        const x = Math.floor(mouseX / this.tileOnCanvas);
+        const y = Math.floor(mouseY / this.tileOnCanvas);
+        const itemId = this.items.findIndex(
+          item => item.imageName === "dead" && isAt(item, [x, y])
+        );
+        if (itemId !== -1) {
+          this.setItem(itemId, butcher(this.items[itemId]));
+        }
+      }
+    },
     addItem(item) {
       this.items = [...this.items, item];
     },

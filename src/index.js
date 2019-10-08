@@ -1,7 +1,7 @@
 import Vue from 'vue';
-import Example from './components/Example.vue';
+import Game from './components/Game.vue';
 
 new Vue({
   el: '#app',
-  render: h => h(Example)
+  render: h => h(Game)
 });
