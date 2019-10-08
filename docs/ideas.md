@@ -1,3 +1,3 @@
-- eat batteries for energy
 - prepare batteries before eating
 - leave a butchered shell behind
+- dead bodies/shells decompose into monsters

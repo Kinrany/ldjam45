@@ -58,7 +58,8 @@ const spawn = pos => ({ pos, imageName: "spawn" });
 const dead = robot => ({ ...robot, imageName: "dead" });
 const moved = (robot, [dx, dy]) => {
   const [x, y] = robot.pos;
-  return { ...robot, pos: [x + dx, y + dy] };
+  const energy = robot.energy - 1;
+  return { ...robot, energy, pos: [x + dx, y + dy] };
 };
 const charged = (robot, energy) => ({
   ...robot,
@@ -130,9 +131,11 @@ export default {
 
         case "move":
           const [direction] = actionData;
-          const [x, y] = this.robot.pos;
-          const [dx, dy] = DIRECTIONS[direction];
-          this.setItem(this.robotId, moved(this.robot, [dx, dy]));
+          if (this.robot.energy > 0) {
+            const [x, y] = this.robot.pos;
+            const [dx, dy] = DIRECTIONS[direction];
+            this.setItem(this.robotId, moved(this.robot, [dx, dy]));
+          }
           break;
 
         case "interact":
