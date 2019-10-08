@@ -1,3 +1,3 @@
-- butcher
-- cook
-- eat
+- eat batteries for energy
+- prepare batteries before eating
+- leave a butchered shell behind

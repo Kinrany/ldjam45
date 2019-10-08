@@ -63,15 +63,13 @@ const moved = (robot, [dx, dy]) => {
 
 const butcher = dead => ({ ...dead, imageName: "battery" });
 
-const isAt = (item, pos) => item.pos[0] === pos[0] && item.pos[1] === pos[1];
-
 export default {
   name: "ldjam45-game",
   components: {
     "vue-p5": VueP5
   },
   data: () => ({
-    items: [spawn([2, 2]), robot([3, 2])],
+    items: [{ id: 0, ...spawn([2, 2]) }, { id: 1, ...robot([3, 2]) }],
     robotActions: [],
     zoom: 0,
     cameraOffset: [0, 0]
@@ -208,19 +206,25 @@ export default {
       }
     },
     mouseClicked({ mouseX, mouseY }) {
-      if (inRange(0, mouseX, CANVAS) && inRange(0, mouseY, CANVAS)) {
-        const x = Math.floor(mouseX / this.tileOnCanvas);
-        const y = Math.floor(mouseY / this.tileOnCanvas);
-        const itemId = this.items.findIndex(
-          item => item.imageName === "dead" && isAt(item, [x, y])
-        );
-        if (itemId !== -1) {
-          this.setItem(itemId, butcher(this.items[itemId]));
-        }
+      if (!inRange(0, mouseX, CANVAS) || !inRange(0, mouseY, CANVAS)) {
+        return;
+      }
+      if (!robot) {
+        return;
+      }
+
+      const x = Math.floor(mouseX / this.tileOnCanvas);
+      const y = Math.floor(mouseY / this.tileOnCanvas);
+      const items = this.itemsAt([x, y]);
+
+      const item = items.find(item => item.imageName === "dead");
+      if (item) {
+        this.setItem(item.id, butcher(item));
       }
     },
     addItem(item) {
-      this.items = [...this.items, item];
+      const id = this.items.length;
+      this.items = [...this.items, { ...item, id }];
     },
     setItem(itemId, item) {
       if (!this.items[itemId]) {
@@ -231,6 +235,13 @@ export default {
         item,
         ...this.items.slice(itemId + 1)
       ];
+    },
+    itemsAt(pos) {
+      const [x, y] = pos;
+      return this.items.filter(item => {
+        const [itemX, itemY] = item.pos;
+        return x === itemX && y === itemY;
+      });
     }
   }
 };
