@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import Game from './components/Game.vue';
+import Game from './Game.vue';
 
 new Vue({
   el: '#app',
