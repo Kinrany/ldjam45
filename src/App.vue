@@ -7,17 +7,13 @@
       @keypressed="keyPressed"
       @mouseclicked="mouseClicked"
     ></vue-p5>
-    <div>Energy: {{robot ? robot.energy : 0}}</div>
-    <div>
-      Zoom:
-      <button @click="zoom += 1">+</button>
-      <button @click="zoom -= 1">-</button>
-    </div>
+    <game-ui :robot="robot" @zoom-increment="zoom += 1" @zoom-decrement="zoom -= 1"></game-ui>
   </div>
 </template>
 
 <script>
 import VueP5 from "vue-p5";
+import Ui from "./Ui.vue";
 import { range, inRange, clamp } from "./util";
 import * as game from "./game";
 
@@ -50,7 +46,8 @@ const images = new Map();
 export default {
   name: "vue-app",
   components: {
-    "vue-p5": VueP5
+    "vue-p5": VueP5,
+    "game-ui": Ui
   },
   data: () => ({
     items: [{ id: 0, ...game.spawn([2, 2]) }, { id: 1, ...game.robot([3, 2]) }],
