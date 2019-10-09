@@ -101,39 +101,17 @@ export default {
       const [name, ...actionData] = action;
       switch (name) {
         case "respawn":
-          this.setItem(this.robotId, game.dead(this.robot));
-          const spawn = this.items.find(
-            item => item && item.imageName === "spawn"
-          );
-          this.addItem(game.robot(spawn.pos));
+          this.doRespawn();
           break;
 
         case "move":
           const [direction] = actionData;
-          if (this.robot.energy > 0) {
-            const [x, y] = this.robot.pos;
-            const [dx, dy] = DIRECTIONS[direction];
-            this.setItem(this.robotId, game.moved(this.robot, [dx, dy]));
-          }
+          this.doMove(direction);
           break;
 
         case "interact":
           const [pos] = actionData;
-          const items = this.itemsAt(pos);
-          for (const item of items) {
-            if (item.imageName === "dead") {
-              this.setItem(item.id, game.butcher(item));
-              break;
-            }
-            if (item.imageName === "battery") {
-              const battery = this.removeItem(item.id);
-              this.setItem(
-                this.robotId,
-                game.charged(this.robot, battery.energy)
-              );
-              break;
-            }
-          }
+          this.doInteract(pos);
       }
     },
     draw(sketch) {
@@ -250,6 +228,32 @@ export default {
     },
     addRobotAction(action) {
       this.robotActions = [...this.robotActions, action];
+    },
+    doInteract(pos) {
+      const items = this.itemsAt(pos);
+      for (const item of items) {
+        if (item.imageName === "dead") {
+          this.setItem(item.id, game.butcher(item));
+          break;
+        }
+        if (item.imageName === "battery") {
+          const battery = this.removeItem(item.id);
+          this.setItem(this.robotId, game.charged(this.robot, battery.energy));
+          break;
+        }
+      }
+    },
+    doMove(direction) {
+      if (this.robot.energy > 0) {
+        const [x, y] = this.robot.pos;
+        const [dx, dy] = DIRECTIONS[direction];
+        this.setItem(this.robotId, game.moved(this.robot, [dx, dy]));
+      }
+    },
+    doRespawn() {
+      this.setItem(this.robotId, game.dead(this.robot));
+      const spawn = this.items.find(item => item && item.imageName === "spawn");
+      this.addItem(game.robot(spawn.pos));
     }
   }
 };
