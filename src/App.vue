@@ -18,6 +18,8 @@
 
 <script>
 import VueP5 from "vue-p5";
+import { range, inRange, clamp } from "./util";
+import * as game from "./game";
 
 // width and height of a tile .png file
 const TILE = 64;
@@ -45,36 +47,13 @@ const DIRECTIONS = {
 
 const images = new Map();
 
-const range = (a, b) =>
-  Array(b - a)
-    .fill(0)
-    .map((_, i) => a + i);
-const inRange = (a, x, b) => a <= x && x < b;
-const clamp = (a, x, b) => Math.max(a, Math.min(x, b));
-
-const robot = pos => ({ pos, imageName: "robot", energy: 10 });
-const spawn = pos => ({ pos, imageName: "spawn" });
-
-const dead = robot => ({ ...robot, imageName: "dead" });
-const moved = (robot, [dx, dy]) => {
-  const [x, y] = robot.pos;
-  const energy = robot.energy - 1;
-  return { ...robot, energy, pos: [x + dx, y + dy] };
-};
-const charged = (robot, energy) => ({
-  ...robot,
-  energy: robot.energy + energy
-});
-
-const butcher = dead => ({ ...dead, imageName: "battery" });
-
 export default {
   name: "vue-app",
   components: {
     "vue-p5": VueP5
   },
   data: () => ({
-    items: [{ id: 0, ...spawn([2, 2]) }, { id: 1, ...robot([3, 2]) }],
+    items: [{ id: 0, ...game.spawn([2, 2]) }, { id: 1, ...game.robot([3, 2]) }],
     robotActions: [],
     zoom: 0,
     cameraOffset: [0, 0]
@@ -122,11 +101,11 @@ export default {
       const [name, ...actionData] = action;
       switch (name) {
         case "respawn":
-          this.setItem(this.robotId, dead(this.robot));
+          this.setItem(this.robotId, game.dead(this.robot));
           const spawn = this.items.find(
             item => item && item.imageName === "spawn"
           );
-          this.addItem(robot(spawn.pos));
+          this.addItem(game.robot(spawn.pos));
           break;
 
         case "move":
@@ -134,7 +113,7 @@ export default {
           if (this.robot.energy > 0) {
             const [x, y] = this.robot.pos;
             const [dx, dy] = DIRECTIONS[direction];
-            this.setItem(this.robotId, moved(this.robot, [dx, dy]));
+            this.setItem(this.robotId, game.moved(this.robot, [dx, dy]));
           }
           break;
 
@@ -143,12 +122,15 @@ export default {
           const items = this.itemsAt(pos);
           for (const item of items) {
             if (item.imageName === "dead") {
-              this.setItem(item.id, butcher(item));
+              this.setItem(item.id, game.butcher(item));
               break;
             }
             if (item.imageName === "battery") {
               const battery = this.removeItem(item.id);
-              this.setItem(this.robotId, charged(this.robot, battery.energy));
+              this.setItem(
+                this.robotId,
+                game.charged(this.robot, battery.energy)
+              );
               break;
             }
           }
@@ -233,7 +215,7 @@ export default {
       if (!inRange(0, mouseX, CANVAS) || !inRange(0, mouseY, CANVAS)) {
         return;
       }
-      if (!robot) {
+      if (!this.robot) {
         return;
       }
 
