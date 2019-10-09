@@ -69,7 +69,7 @@ const charged = (robot, energy) => ({
 const butcher = dead => ({ ...dead, imageName: "battery" });
 
 export default {
-  name: "ldjam45-game",
+  name: "vue-app",
   components: {
     "vue-p5": VueP5
   },
