@@ -25,7 +25,7 @@ export const isAt = pos => item => (pos[0] === item.pos[0] && pos[1] === item.po
 
 // TODO: wrap with immer.js or make immutable
 export const robotActions = {
-  interact: (pos) => state => {
+  interact: pos => state => {
     const items = ItemStore.filter(state.items, isAt(pos));
     for (const item of items) {
       if (item.imageName === "dead") {
@@ -42,5 +42,32 @@ export const robotActions = {
         break;
       }
     }
+  },
+  move: direction => state => {
+    if (getRobot(state).energy > 0) {
+      const [dx, dy] = DIRECTIONS[direction];
+      state.items = ItemStore.set(
+        state.items,
+        getRobot(state).id,
+        moved(getRobot(state), [dx, dy])
+      );
+    }
+  },
+  respawn: () => state => {
+    state.items = ItemStore.set(
+      state.items,
+      getRobot(state).id,
+      dead(getRobot(state))
+    );
+    const spawn = ItemStore.find(
+      state.items,
+      item => item.imageName === "spawn"
+    );
+    state.items = ItemStore.add(state.items, Robot(spawn.pos));
   }
+};
+
+export const applyRobotAction = action => state => {
+  const [name, ...args] = action;
+  robotActions[name](...args)(state);
 };

@@ -97,22 +97,8 @@ export default {
       const [action, ...tail] = this.robotActions;
       this.robotActions = tail;
 
-      if (!action) return;
-
-      const [name, ...actionData] = action;
-      switch (name) {
-        case "respawn":
-          this.doRespawn();
-          break;
-
-        case "move":
-          const [direction] = actionData;
-          this.doMove(direction);
-          break;
-
-        case "interact":
-          const [pos] = actionData;
-          this.doInteract(pos);
+      if (action) {
+        game.applyRobotAction(action)(this);
       }
     },
     draw(sketch) {
@@ -166,32 +152,6 @@ export default {
       const x = Math.floor(mouseX / game.getTileSizeOnCanvas(this)) + cx;
       const y = Math.floor(mouseY / game.getTileSizeOnCanvas(this)) + cy;
       this.robotActions = [...this.robotActions, ["interact", [x, y]]];
-    },
-    doInteract(pos) {
-      game.robotActions.interact(pos)(this);
-    },
-    doMove(direction) {
-      if (game.getRobot(this).energy > 0) {
-        const [x, y] = game.getRobot(this).pos;
-        const [dx, dy] = DIRECTIONS[direction];
-        this.items = ItemStore.set(
-          this.items,
-          game.getRobot(this).id,
-          game.moved(game.getRobot(this), [dx, dy])
-        );
-      }
-    },
-    doRespawn() {
-      this.items = ItemStore.set(
-        this.items,
-        game.getRobot(this).id,
-        game.dead(game.getRobot(this))
-      );
-      const spawn = ItemStore.find(
-        this.items,
-        item => item.imageName === "spawn"
-      );
-      this.items = ItemStore.add(this.items, game.Robot(spawn.pos));
     },
     getRobot() {
       return game.getRobot(this);
