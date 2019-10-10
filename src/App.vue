@@ -78,31 +78,13 @@ export default {
   },
   data: () => ({
     items: ItemStore.create([game.Spawn([2, 2]), game.Robot([3, 2])]),
-    robotActions: [],
     zoom: 0,
     cameraOffset: [0, 0]
   }),
   methods: {
     preload,
     setup,
-    update() {
-      if (!game.getRobot(this)) {
-        if (this.robotActions.length > 0) {
-          // prevent unnecessary updates
-          this.robotActions = [];
-        }
-        return;
-      }
-
-      const [action, ...tail] = this.robotActions;
-      this.robotActions = tail;
-
-      if (action) {
-        game.applyRobotAction(action)(this);
-      }
-    },
     draw(sketch) {
-      this.update();
       draw(sketch, this);
     },
     keyPressed({ keyCode }) {
@@ -117,11 +99,11 @@ export default {
             [KEYCODES.s]: "down",
             [KEYCODES.w]: "up"
           }[keyCode];
-          this.robotActions = [...this.robotActions, ["move", direction]];
+          game.applyRobotAction(["move", direction])(this);
           break;
         }
         case KEYCODES.r:
-          this.robotActions = [...this.robotActions, ["respawn"]];
+          game.applyRobotAction(["respawn"])(this);
           break;
         case KEYCODES.arrowDown:
         case KEYCODES.arrowLeft:
@@ -144,14 +126,11 @@ export default {
       if (!inRange(0, mouseX, CANVAS) || !inRange(0, mouseY, CANVAS)) {
         return;
       }
-      if (!game.getRobot(this)) {
-        return;
-      }
 
       const [cx, cy] = this.cameraOffset;
       const x = Math.floor(mouseX / game.getTileSizeOnCanvas(this)) + cx;
       const y = Math.floor(mouseY / game.getTileSizeOnCanvas(this)) + cy;
-      this.robotActions = [...this.robotActions, ["interact", [x, y]]];
+      game.applyRobotAction(["interact", [x, y]])(this);
     },
     getRobot() {
       return game.getRobot(this);

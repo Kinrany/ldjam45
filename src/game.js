@@ -68,6 +68,8 @@ export const robotActions = {
 };
 
 export const applyRobotAction = action => state => {
-  const [name, ...args] = action;
-  robotActions[name](...args)(state);
+  if (getRobot(state)) {
+    const [name, ...args] = action;
+    robotActions[name](...args)(state);
+  }
 };
