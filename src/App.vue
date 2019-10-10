@@ -17,6 +17,7 @@ import Ui from "./Ui.vue";
 import { range, inRange, clamp } from "./util";
 import * as game from "./game";
 import { TILE, CANVAS, KEYCODES, DIRECTIONS } from "./consts";
+import * as ItemStore from "./item-store";
 
 const images = new Map();
 
@@ -31,6 +32,45 @@ function setup(sketch) {
   sketch.createCanvas(CANVAS, CANVAS);
 }
 
+function draw(sketch, state) {
+  sketch.background(0, 0, 0);
+
+  // background tiles
+  range(0, game.getTileCountOnCanvas(state)).forEach(x => {
+    range(0, game.getTileCountOnCanvas(state)).forEach(y => {
+      sketch.image(
+        images.get("sand"),
+        x * game.getTileSizeOnCanvas(state),
+        y * game.getTileSizeOnCanvas(state),
+        game.getTileSizeOnCanvas(state),
+        game.getTileSizeOnCanvas(state)
+      );
+    });
+  });
+
+  // items
+  const items = ItemStore.filter(state.items, item => {
+    if (!item) return false;
+    const [x, y] = item.pos;
+    const [cx, cy] = state.cameraOffset;
+    return (
+      inRange(cx, x, cx + game.getTileCountOnCanvas(state)) &&
+      inRange(cy, y, cy + game.getTileCountOnCanvas(state))
+    );
+  });
+  items.forEach(item => {
+    const [x, y] = item.pos;
+    const [cx, cy] = state.cameraOffset;
+    sketch.image(
+      images.get(item.imageName),
+      (x - cx) * game.getTileSizeOnCanvas(state),
+      (y - cy) * game.getTileSizeOnCanvas(state),
+      game.getTileSizeOnCanvas(state),
+      game.getTileSizeOnCanvas(state)
+    );
+  });
+}
+
 export default {
   name: "vue-app",
   components: {
@@ -38,7 +78,7 @@ export default {
     "game-ui": Ui
   },
   data: () => ({
-    items: [{ id: 0, ...game.Spawn([2, 2]) }, { id: 1, ...game.Robot([3, 2]) }],
+    items: ItemStore.create([game.Spawn([2, 2]), game.Robot([3, 2])]),
     robotActions: [],
     zoom: 0,
     cameraOffset: [0, 0]
@@ -78,43 +118,7 @@ export default {
     },
     draw(sketch) {
       this.update();
-
-      sketch.background(0, 0, 0);
-
-      // background tiles
-      range(0, game.getTileCountOnCanvas(this)).forEach(x => {
-        range(0, game.getTileCountOnCanvas(this)).forEach(y => {
-          sketch.image(
-            images.get("sand"),
-            x * game.getTileSizeOnCanvas(this),
-            y * game.getTileSizeOnCanvas(this),
-            game.getTileSizeOnCanvas(this),
-            game.getTileSizeOnCanvas(this)
-          );
-        });
-      });
-
-      // items
-      const items = this.items.filter(item => {
-        if (!item) return false;
-        const [x, y] = item.pos;
-        const [cx, cy] = this.cameraOffset;
-        return (
-          inRange(cx, x, cx + game.getTileCountOnCanvas(this)) &&
-          inRange(cy, y, cy + game.getTileCountOnCanvas(this))
-        );
-      });
-      items.forEach(item => {
-        const [x, y] = item.pos;
-        const [cx, cy] = this.cameraOffset;
-        sketch.image(
-          images.get(item.imageName),
-          (x - cx) * game.getTileSizeOnCanvas(this),
-          (y - cy) * game.getTileSizeOnCanvas(this),
-          game.getTileSizeOnCanvas(this),
-          game.getTileSizeOnCanvas(this)
-        );
-      });
+      draw(sketch, this);
     },
     keyPressed({ keyCode }) {
       switch (keyCode) {
@@ -164,25 +168,17 @@ export default {
       const y = Math.floor(mouseY / game.getTileSizeOnCanvas(this)) + cy;
       this.addRobotAction(["interact", [x, y]]);
     },
-    addItem(item) {
-      const id = this.items.length;
-      this.items = [...this.items, { ...item, id }];
+    setItem(id, item) {
+      this.items = ItemStore.set(this.items, id, item);
     },
-    setItem(itemId, item) {
-      if (!this.items[itemId]) {
-        throw new Error(`Item id ${itemId} does not exist`);
-      }
-      this.items.splice(itemId, 1, item);
-      this.items = this.items;
-    },
-    removeItem(itemId) {
-      const item = this.items[itemId];
-      this.items[itemId] = undefined;
+    removeItem(id) {
+      const item = ItemStore.get(this.items, id);
+      this.items = ItemStore.set(this.items, id, undefined);
       return item;
     },
     itemsAt(pos) {
       const [x, y] = pos;
-      return this.items.filter(item => {
+      return ItemStore.filter(this.items, item => {
         if (!item) return false;
         const [itemX, itemY] = item.pos;
         return x === itemX && y === itemY;
@@ -220,8 +216,11 @@ export default {
     },
     doRespawn() {
       this.setItem(game.getRobot(this).id, game.dead(game.getRobot(this)));
-      const spawn = this.items.find(item => item && item.imageName === "spawn");
-      this.addItem(game.Robot(spawn.pos));
+      const spawn = ItemStore.find(
+        this.items,
+        item => item && item.imageName === "spawn"
+      );
+      this.items = ItemStore.add(this.items, game.Robot(spawn.pos));
     },
     getRobot() {
       return game.getRobot(this);
