@@ -1,5 +1,5 @@
-import { TILE, CANVAS, DIRECTIONS } from "./consts";
 import * as ItemStore from "./item-store";
+import { applyCameraAction, DIRECTIONS } from "./camera";
 
 export const Robot = pos => ({ pos, imageName: "robot", energy: 10 });
 export const Spawn = pos => ({ pos, imageName: "spawn" });
@@ -18,13 +18,11 @@ export const charged = (robot, energy) => ({
 export const butcher = dead => ({ ...dead, imageName: "battery" });
 
 export const getRobot = state => ItemStore.find(state.items, item => item.imageName === "robot");
-export const getTileSizeOnCanvas = state => TILE * Math.pow(2, state.zoom);
-export const getTileCountOnCanvas = state => Math.ceil(CANVAS / getTileSizeOnCanvas(state));
 
 export const isAt = pos => item => (pos[0] === item.pos[0] && pos[1] === item.pos[1]);
 
 // TODO: wrap with immer.js or make immutable
-export const robotActions = {
+const robotActions = {
   interact: pos => state => {
     const items = ItemStore.filter(state.items, isAt(pos));
     for (const item of items) {
@@ -67,19 +65,15 @@ export const robotActions = {
   }
 };
 
-export const applyRobotAction = (actionName, ...args) => state => {
+const applyRobotAction = (actionName, ...args) => state => {
   if (getRobot(state)) {
     robotActions[actionName](...args)(state);
   }
 };
 
-export const gameActions = {
+const gameActions = {
   robotAction: applyRobotAction,
-  moveCamera: direction => state => {
-    const [x, y] = state.cameraOffset;
-    const [dx, dy] = DIRECTIONS[direction];
-    state.cameraOffset = [x + dx, y + dy];
-  }
+  cameraAction: applyCameraAction
 };
 
 export const applyGameAction = (actionName, ...args) => state => {
