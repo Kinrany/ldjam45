@@ -131,11 +131,11 @@ export default {
             [KEYCODES.s]: "down",
             [KEYCODES.w]: "up"
           }[keyCode];
-          this.addRobotAction(["move", direction]);
+          this.robotActions = [...this.robotActions, ["move", direction]];
           break;
         }
         case KEYCODES.r:
-          this.addRobotAction(["respawn"]);
+          this.robotActions = [...this.robotActions, ["respawn"]];
           break;
         case KEYCODES.arrowDown:
         case KEYCODES.arrowLeft:
@@ -165,35 +165,10 @@ export default {
       const [cx, cy] = this.cameraOffset;
       const x = Math.floor(mouseX / game.getTileSizeOnCanvas(this)) + cx;
       const y = Math.floor(mouseY / game.getTileSizeOnCanvas(this)) + cy;
-      this.addRobotAction(["interact", [x, y]]);
-    },
-    itemsAt(pos) {
-      const [x, y] = pos;
-      return ItemStore.filter(this.items, item => {
-        const [itemX, itemY] = item.pos;
-        return x === itemX && y === itemY;
-      });
-    },
-    addRobotAction(action) {
-      this.robotActions = [...this.robotActions, action];
+      this.robotActions = [...this.robotActions, ["interact", [x, y]]];
     },
     doInteract(pos) {
-      const items = this.itemsAt(pos);
-      for (const item of items) {
-        if (item.imageName === "dead") {
-          this.items = ItemStore.set(this.items, item.id, game.butcher(item));
-          break;
-        }
-        if (item.imageName === "battery") {
-          this.items = ItemStore.remove(this.items, item.id);
-          this.items = ItemStore.set(
-            this.items,
-            game.getRobot(this).id,
-            game.charged(game.getRobot(this), item.energy)
-          );
-          break;
-        }
-      }
+      game.robotActions.interact(pos)(this);
     },
     doMove(direction) {
       if (game.getRobot(this).energy > 0) {
