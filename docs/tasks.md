@@ -3,6 +3,7 @@
 - make camera move faster when zoomed out
 - make camera follow the robot
 - automate Github Pages
+- automate image manipulation
 
 ## Done
 - extract game logic

@@ -1,6 +1,6 @@
 - prepare batteries before eating
 - leave a butchered shell behind
-- dead bodies/shells decompose into monsters
-- killing monsters is useful
-- being killed by monsters is also useful
+- dead bodies decompose into glitches
+- killing glitches is useful
+- being killed by a glitch is also useful
 - leave tracks when walking
