@@ -99,11 +99,11 @@ export default {
             [KEYCODES.s]: "down",
             [KEYCODES.w]: "up"
           }[keyCode];
-          game.applyRobotAction(["move", direction])(this);
+          game.applyGameAction("robotAction", "move", direction)(this);
           break;
         }
         case KEYCODES.r:
-          game.applyRobotAction(["respawn"])(this);
+          game.applyGameAction("robotAction", "respawn")(this);
           break;
         case KEYCODES.arrowDown:
         case KEYCODES.arrowLeft:
@@ -115,9 +115,7 @@ export default {
             [KEYCODES.arrowRight]: "right",
             [KEYCODES.arrowUp]: "up"
           }[keyCode];
-          const [x, y] = this.cameraOffset;
-          const [dx, dy] = DIRECTIONS[direction];
-          this.cameraOffset = [x + dx, y + dy];
+          game.applyGameAction("moveCamera", direction)(this);
           break;
         }
       }
@@ -130,7 +128,7 @@ export default {
       const [cx, cy] = this.cameraOffset;
       const x = Math.floor(mouseX / game.getTileSizeOnCanvas(this)) + cx;
       const y = Math.floor(mouseY / game.getTileSizeOnCanvas(this)) + cy;
-      game.applyRobotAction(["interact", [x, y]])(this);
+      game.applyGameAction("robotAction", "interact", [x, y])(this);
     },
     getRobot() {
       return game.getRobot(this);

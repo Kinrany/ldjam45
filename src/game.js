@@ -67,9 +67,21 @@ export const robotActions = {
   }
 };
 
-export const applyRobotAction = action => state => {
+export const applyRobotAction = (actionName, ...args) => state => {
   if (getRobot(state)) {
-    const [name, ...args] = action;
-    robotActions[name](...args)(state);
+    robotActions[actionName](...args)(state);
   }
+};
+
+export const gameActions = {
+  robotAction: applyRobotAction,
+  moveCamera: direction => state => {
+    const [x, y] = state.cameraOffset;
+    const [dx, dy] = DIRECTIONS[direction];
+    state.cameraOffset = [x + dx, y + dy];
+  }
+};
+
+export const applyGameAction = (actionName, ...args) => state => {
+  gameActions[actionName](...args)(state);
 };

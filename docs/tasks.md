@@ -4,6 +4,7 @@
 - hardcode zoom levels
 - make camera move faster when zoomed out
 - make camera follow the robot
+- automate Github Pages
 
 ## Done
 - separate functions on `items` from other code
