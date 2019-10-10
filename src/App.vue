@@ -18,57 +18,9 @@ import { range, inRange, clamp } from "./util";
 import * as game from "./game";
 import { TILE, CANVAS, KEYCODES, DIRECTIONS } from "./consts";
 import * as ItemStore from "./item-store";
+import CONTROL_KEYS from "./controls";
 
 const images = new Map();
-
-function preload(sketch) {
-  const imageNames = ["robot", "sand", "dead", "spawn", "battery"];
-  for (const name of imageNames) {
-    images.set(name, sketch.loadImage(`static/${name}.png`));
-  }
-}
-
-function setup(sketch) {
-  sketch.createCanvas(CANVAS, CANVAS);
-}
-
-function draw(sketch, state) {
-  sketch.background(0, 0, 0);
-
-  // background tiles
-  range(0, game.getTileCountOnCanvas(state)).forEach(x => {
-    range(0, game.getTileCountOnCanvas(state)).forEach(y => {
-      sketch.image(
-        images.get("sand"),
-        x * game.getTileSizeOnCanvas(state),
-        y * game.getTileSizeOnCanvas(state),
-        game.getTileSizeOnCanvas(state),
-        game.getTileSizeOnCanvas(state)
-      );
-    });
-  });
-
-  // items
-  const items = ItemStore.filter(state.items, item => {
-    const [x, y] = item.pos;
-    const [cx, cy] = state.cameraOffset;
-    return (
-      inRange(cx, x, cx + game.getTileCountOnCanvas(state)) &&
-      inRange(cy, y, cy + game.getTileCountOnCanvas(state))
-    );
-  });
-  items.forEach(item => {
-    const [x, y] = item.pos;
-    const [cx, cy] = state.cameraOffset;
-    sketch.image(
-      images.get(item.imageName),
-      (x - cx) * game.getTileSizeOnCanvas(state),
-      (y - cy) * game.getTileSizeOnCanvas(state),
-      game.getTileSizeOnCanvas(state),
-      game.getTileSizeOnCanvas(state)
-    );
-  });
-}
 
 export default {
   name: "vue-app",
@@ -82,43 +34,55 @@ export default {
     cameraOffset: [0, 0]
   }),
   methods: {
-    preload,
-    setup,
+    preload(sketch) {
+      const imageNames = ["robot", "sand", "dead", "spawn", "battery"];
+      for (const name of imageNames) {
+        images.set(name, sketch.loadImage(`static/${name}.png`));
+      }
+    },
+    setup(sketch) {
+      sketch.createCanvas(CANVAS, CANVAS);
+    },
     draw(sketch) {
-      draw(sketch, this);
+      const state = this;
+
+      sketch.background(0, 0, 0);
+
+      // background tiles
+      range(0, game.getTileCountOnCanvas(state)).forEach(x => {
+        range(0, game.getTileCountOnCanvas(state)).forEach(y => {
+          sketch.image(
+            images.get("sand"),
+            x * game.getTileSizeOnCanvas(state),
+            y * game.getTileSizeOnCanvas(state),
+            game.getTileSizeOnCanvas(state),
+            game.getTileSizeOnCanvas(state)
+          );
+        });
+      });
+
+      // items
+      ItemStore.filter(state.items, item => {
+        const [x, y] = item.pos;
+        const [cx, cy] = state.cameraOffset;
+        return (
+          inRange(cx, x, cx + game.getTileCountOnCanvas(state)) &&
+          inRange(cy, y, cy + game.getTileCountOnCanvas(state))
+        );
+      }).forEach(item => {
+        const [x, y] = item.pos;
+        const [cx, cy] = state.cameraOffset;
+        sketch.image(
+          images.get(item.imageName),
+          (x - cx) * game.getTileSizeOnCanvas(state),
+          (y - cy) * game.getTileSizeOnCanvas(state),
+          game.getTileSizeOnCanvas(state),
+          game.getTileSizeOnCanvas(state)
+        );
+      });
     },
     keyPressed({ keyCode }) {
-      switch (keyCode) {
-        case KEYCODES.a:
-        case KEYCODES.d:
-        case KEYCODES.s:
-        case KEYCODES.w: {
-          const direction = {
-            [KEYCODES.a]: "left",
-            [KEYCODES.d]: "right",
-            [KEYCODES.s]: "down",
-            [KEYCODES.w]: "up"
-          }[keyCode];
-          game.applyGameAction("robotAction", "move", direction)(this);
-          break;
-        }
-        case KEYCODES.r:
-          game.applyGameAction("robotAction", "respawn")(this);
-          break;
-        case KEYCODES.arrowDown:
-        case KEYCODES.arrowLeft:
-        case KEYCODES.arrowRight:
-        case KEYCODES.arrowUp: {
-          const direction = {
-            [KEYCODES.arrowDown]: "down",
-            [KEYCODES.arrowLeft]: "left",
-            [KEYCODES.arrowRight]: "right",
-            [KEYCODES.arrowUp]: "up"
-          }[keyCode];
-          game.applyGameAction("moveCamera", direction)(this);
-          break;
-        }
-      }
+      game.applyGameAction(...CONTROL_KEYS.get(keyCode))(this);
     },
     mouseClicked({ mouseX, mouseY }) {
       if (!inRange(0, mouseX, CANVAS) || !inRange(0, mouseY, CANVAS)) {

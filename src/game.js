@@ -1,4 +1,4 @@
-import { TILE, CANVAS, KEYCODES, DIRECTIONS } from "./consts";
+import { TILE, CANVAS, DIRECTIONS } from "./consts";
 import * as ItemStore from "./item-store";
 
 export const Robot = pos => ({ pos, imageName: "robot", energy: 10 });
