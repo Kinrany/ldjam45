@@ -33,7 +33,6 @@ export function get(itemStore, id) {
  */
 export function find(itemStore, pred) {
   return [...itemStore.store.entries()]
-    .filter(([_id, item]) => item)
     .map(([id, item]) => ({ id, ...item }))
     .find(pred);
 }
@@ -45,7 +44,6 @@ export function find(itemStore, pred) {
  */
 export function filter(itemStore, pred) {
   return [...itemStore.store.entries()]
-    .filter(([_id, item]) => item)
     .map(([id, item]) => ({ id, ...item }))
     .filter(pred);
 }
@@ -71,6 +69,18 @@ export function set(itemStore, id, item) {
   const { store, nextId } = itemStore;
   checkId(store, id);
   store.set(id, item);
+  return { store, nextId };
+}
+
+/**
+ * @param {ItemStore} itemStore
+ * @param {number} id
+ * @returns {ItemStore}
+ */
+export function remove(itemStore, id) {
+  const { store, nextId } = itemStore;
+  checkId(store, id);
+  store.delete(id);
   return { store, nextId };
 }
 

@@ -50,7 +50,6 @@ function draw(sketch, state) {
 
   // items
   const items = ItemStore.filter(state.items, item => {
-    if (!item) return false;
     const [x, y] = item.pos;
     const [cx, cy] = state.cameraOffset;
     return (
@@ -168,18 +167,9 @@ export default {
       const y = Math.floor(mouseY / game.getTileSizeOnCanvas(this)) + cy;
       this.addRobotAction(["interact", [x, y]]);
     },
-    setItem(id, item) {
-      this.items = ItemStore.set(this.items, id, item);
-    },
-    removeItem(id) {
-      const item = ItemStore.get(this.items, id);
-      this.items = ItemStore.set(this.items, id, undefined);
-      return item;
-    },
     itemsAt(pos) {
       const [x, y] = pos;
       return ItemStore.filter(this.items, item => {
-        if (!item) return false;
         const [itemX, itemY] = item.pos;
         return x === itemX && y === itemY;
       });
@@ -191,14 +181,15 @@ export default {
       const items = this.itemsAt(pos);
       for (const item of items) {
         if (item.imageName === "dead") {
-          this.setItem(item.id, game.butcher(item));
+          this.items = ItemStore.set(this.items, item.id, game.butcher(item));
           break;
         }
         if (item.imageName === "battery") {
-          const battery = this.removeItem(item.id);
-          this.setItem(
+          this.items = ItemStore.remove(this.items, item.id);
+          this.items = ItemStore.set(
+            this.items,
             game.getRobot(this).id,
-            game.charged(game.getRobot(this), battery.energy)
+            game.charged(game.getRobot(this), item.energy)
           );
           break;
         }
@@ -208,17 +199,22 @@ export default {
       if (game.getRobot(this).energy > 0) {
         const [x, y] = game.getRobot(this).pos;
         const [dx, dy] = DIRECTIONS[direction];
-        this.setItem(
+        this.items = ItemStore.set(
+          this.items,
           game.getRobot(this).id,
           game.moved(game.getRobot(this), [dx, dy])
         );
       }
     },
     doRespawn() {
-      this.setItem(game.getRobot(this).id, game.dead(game.getRobot(this)));
+      this.items = ItemStore.set(
+        this.items,
+        game.getRobot(this).id,
+        game.dead(game.getRobot(this))
+      );
       const spawn = ItemStore.find(
         this.items,
-        item => item && item.imageName === "spawn"
+        item => item.imageName === "spawn"
       );
       this.items = ItemStore.add(this.items, game.Robot(spawn.pos));
     },

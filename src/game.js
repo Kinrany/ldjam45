@@ -17,6 +17,6 @@ export const charged = (robot, energy) => ({
 
 export const butcher = dead => ({ ...dead, imageName: "battery" });
 
-export const getRobot = state => ItemStore.find(state.items, item => item && item.imageName === "robot");
+export const getRobot = state => ItemStore.find(state.items, item => item.imageName === "robot");
 export const getTileSizeOnCanvas = state => TILE * Math.pow(2, state.zoom);
 export const getTileCountOnCanvas = state => Math.ceil(CANVAS / getTileSizeOnCanvas(state));
