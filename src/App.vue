@@ -7,17 +7,15 @@
       @keypressed="keyPressed"
       @mouseclicked="mouseClicked"
     ></vue-p5>
-    <div>Energy: {{robot ? robot.energy : 0}}</div>
-    <div>
-      Zoom:
-      <button @click="zoom += 1">+</button>
-      <button @click="zoom -= 1">-</button>
-    </div>
+    <game-ui :robot="robot" @zoom-increment="zoom += 1" @zoom-decrement="zoom -= 1"></game-ui>
   </div>
 </template>
 
 <script>
 import VueP5 from "vue-p5";
+import Ui from "./Ui.vue";
+import { range, inRange, clamp } from "./util";
+import * as game from "./game";
 
 // width and height of a tile .png file
 const TILE = 64;
@@ -45,36 +43,14 @@ const DIRECTIONS = {
 
 const images = new Map();
 
-const range = (a, b) =>
-  Array(b - a)
-    .fill(0)
-    .map((_, i) => a + i);
-const inRange = (a, x, b) => a <= x && x < b;
-const clamp = (a, x, b) => Math.max(a, Math.min(x, b));
-
-const robot = pos => ({ pos, imageName: "robot", energy: 10 });
-const spawn = pos => ({ pos, imageName: "spawn" });
-
-const dead = robot => ({ ...robot, imageName: "dead" });
-const moved = (robot, [dx, dy]) => {
-  const [x, y] = robot.pos;
-  const energy = robot.energy - 1;
-  return { ...robot, energy, pos: [x + dx, y + dy] };
-};
-const charged = (robot, energy) => ({
-  ...robot,
-  energy: robot.energy + energy
-});
-
-const butcher = dead => ({ ...dead, imageName: "battery" });
-
 export default {
   name: "vue-app",
   components: {
-    "vue-p5": VueP5
+    "vue-p5": VueP5,
+    "game-ui": Ui
   },
   data: () => ({
-    items: [{ id: 0, ...spawn([2, 2]) }, { id: 1, ...robot([3, 2]) }],
+    items: [{ id: 0, ...game.spawn([2, 2]) }, { id: 1, ...game.robot([3, 2]) }],
     robotActions: [],
     zoom: 0,
     cameraOffset: [0, 0]
@@ -122,36 +98,17 @@ export default {
       const [name, ...actionData] = action;
       switch (name) {
         case "respawn":
-          this.setItem(this.robotId, dead(this.robot));
-          const spawn = this.items.find(
-            item => item && item.imageName === "spawn"
-          );
-          this.addItem(robot(spawn.pos));
+          this.doRespawn();
           break;
 
         case "move":
           const [direction] = actionData;
-          if (this.robot.energy > 0) {
-            const [x, y] = this.robot.pos;
-            const [dx, dy] = DIRECTIONS[direction];
-            this.setItem(this.robotId, moved(this.robot, [dx, dy]));
-          }
+          this.doMove(direction);
           break;
 
         case "interact":
           const [pos] = actionData;
-          const items = this.itemsAt(pos);
-          for (const item of items) {
-            if (item.imageName === "dead") {
-              this.setItem(item.id, butcher(item));
-              break;
-            }
-            if (item.imageName === "battery") {
-              const battery = this.removeItem(item.id);
-              this.setItem(this.robotId, charged(this.robot, battery.energy));
-              break;
-            }
-          }
+          this.doInteract(pos);
       }
     },
     draw(sketch) {
@@ -233,7 +190,7 @@ export default {
       if (!inRange(0, mouseX, CANVAS) || !inRange(0, mouseY, CANVAS)) {
         return;
       }
-      if (!robot) {
+      if (!this.robot) {
         return;
       }
 
@@ -268,6 +225,32 @@ export default {
     },
     addRobotAction(action) {
       this.robotActions = [...this.robotActions, action];
+    },
+    doInteract(pos) {
+      const items = this.itemsAt(pos);
+      for (const item of items) {
+        if (item.imageName === "dead") {
+          this.setItem(item.id, game.butcher(item));
+          break;
+        }
+        if (item.imageName === "battery") {
+          const battery = this.removeItem(item.id);
+          this.setItem(this.robotId, game.charged(this.robot, battery.energy));
+          break;
+        }
+      }
+    },
+    doMove(direction) {
+      if (this.robot.energy > 0) {
+        const [x, y] = this.robot.pos;
+        const [dx, dy] = DIRECTIONS[direction];
+        this.setItem(this.robotId, game.moved(this.robot, [dx, dy]));
+      }
+    },
+    doRespawn() {
+      this.setItem(this.robotId, game.dead(this.robot));
+      const spawn = this.items.find(item => item && item.imageName === "spawn");
+      this.addItem(game.robot(spawn.pos));
     }
   }
 };
