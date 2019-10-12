@@ -4,6 +4,7 @@
 - make camera follow the robot
 - automate Github Pages
 - automate image manipulation
+- find an alternative to Vue for state management
 
 ## Done
 - extract game logic
