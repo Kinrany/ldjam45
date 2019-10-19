@@ -26,17 +26,20 @@ const cameraActions = {
   move: direction => state => {
     const [x, y] = state.camera.offset;
     const [dx, dy] = DIRECTIONS[direction];
-    state.camera.offset = [x + dx, y + dy];
-    return state;
+    const offset = [x + dx, y + dy];
+    const camera = { ...state.camera, offset };
+    return { ...state, camera };
   },
   zoom: inOrOut => state => {
+    let zoom = state.camera.zoom;
     if (inOrOut === "in") {
-      state.camera.zoom += 1;
+      zoom += 1;
     }
     else if (inOrOut === "out") {
-      state.camera.zoom -= 1;
+      zoom -= 1;
     }
-    return state;
+    const camera = { ...state.camera, zoom };
+    return { ...state, camera };
   }
 }
 
