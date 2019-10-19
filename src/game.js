@@ -42,7 +42,7 @@ const robotActions = {
         break;
       }
     }
-    return { ...state, items };
+    return [{ ...state, items }];
   },
   move: direction => state => {
     const robot = getRobot(state);
@@ -56,23 +56,32 @@ const robotActions = {
         moved(robot, [dx, dy])
       );
     }
-    return { ...state, items };
+    return [{ ...state, items }];
   },
   respawn: () => state => {
     const robot = getRobot(state);
     let items = state.items;
 
+    // replace old robot with a dead body
     items = ItemStore.set(
       items,
       robot.id,
       dead(robot)
     );
+
+    // add a new robot at the spawn point
     const spawn = ItemStore.find(
       items,
       item => item.imageName === "spawn"
     );
     items = ItemStore.add(items, Robot(spawn.pos));
-    return { ...state, items };
+
+    state = { ...state, items };
+
+    // replace dead body with a glitch after some time
+    const spawnGlitchAction = ["setTimeout", 3000, "spawnGlitch", robot.id];
+
+    return [state, spawnGlitchAction];
   }
 };
 
@@ -84,7 +93,27 @@ const applyRobotAction = (actionName, ...args) => state => {
 
 const gameActions = {
   robotAction: applyRobotAction,
-  cameraAction: applyCameraAction
+  cameraAction: applyCameraAction,
+  spawnGlitch: (deadId) => state => {
+    let items = state.items;
+
+    // find the body
+    const deadItem = ItemStore.find(
+      items,
+      item => item.id === deadId && item.imageName === "dead"
+    );
+
+    // if the body is still there, replace with a glitch
+    if (deadItem) {
+      items = ItemStore.set(
+        items,
+        deadItem.id,
+        { ...deadItem, imageName: "glitch" }
+      );
+    }
+
+    return [{ ...state, items }];
+  }
 };
 
 export const applyGameAction = (actionName, ...args) => state => {

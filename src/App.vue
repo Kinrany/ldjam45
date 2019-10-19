@@ -62,7 +62,24 @@ export default {
       return Game.getRobot(this.state);
     },
     applyGameAction(...action) {
-      this.state = Game.applyGameAction(...action)(this.state);
+      const actions = [action];
+      while (actions.length > 0) {
+        const action = actions.shift();
+        if (action[0] === "setTimeout") {
+          this.setActionTimeout(action.slice(2), action[1]);
+        } else {
+          const [state, ...newActions] = Game.applyGameAction(...action)(
+            this.state
+          );
+          actions.push(...newActions);
+          this.state = state;
+        }
+      }
+    },
+    setActionTimeout(action, timeout) {
+      setTimeout(() => {
+        this.applyGameAction(...action);
+      }, timeout);
     }
   }
 };

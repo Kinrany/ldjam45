@@ -28,7 +28,7 @@ const cameraActions = {
     const [dx, dy] = DIRECTIONS[direction];
     const offset = [x + dx, y + dy];
     const camera = { ...state.camera, offset };
-    return { ...state, camera };
+    return [{ ...state, camera }];
   },
   zoom: inOrOut => state => {
     let zoom = state.camera.zoom;
@@ -39,7 +39,7 @@ const cameraActions = {
       zoom -= 1;
     }
     const camera = { ...state.camera, zoom };
-    return { ...state, camera };
+    return [{ ...state, camera }];
   }
 }
 
