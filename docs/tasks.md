@@ -1,4 +1,5 @@
 ## Todo
+- rewrite game logic with pure functions
 - hardcode zoom levels
 - make camera move faster when zoomed out
 - make camera follow the robot

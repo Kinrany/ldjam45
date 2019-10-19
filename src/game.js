@@ -40,6 +40,7 @@ const robotActions = {
         break;
       }
     }
+    return state;
   },
   move: direction => state => {
     if (getRobot(state).energy > 0) {
@@ -50,6 +51,7 @@ const robotActions = {
         moved(getRobot(state), [dx, dy])
       );
     }
+    return state;
   },
   respawn: () => state => {
     state.items = ItemStore.set(
@@ -62,13 +64,14 @@ const robotActions = {
       item => item.imageName === "spawn"
     );
     state.items = ItemStore.add(state.items, Robot(spawn.pos));
+    return state;
   }
 };
 
 const applyRobotAction = (actionName, ...args) => state => {
-  if (getRobot(state)) {
-    robotActions[actionName](...args)(state);
-  }
+  return getRobot(state)
+    ? robotActions[actionName](...args)(state)
+    : state;
 };
 
 const gameActions = {
@@ -77,5 +80,5 @@ const gameActions = {
 };
 
 export const applyGameAction = (actionName, ...args) => state => {
-  gameActions[actionName](...args)(state);
+  return gameActions[actionName](...args)(state);
 };

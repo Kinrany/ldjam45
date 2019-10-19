@@ -27,6 +27,7 @@ const cameraActions = {
     const [x, y] = state.camera.offset;
     const [dx, dy] = DIRECTIONS[direction];
     state.camera.offset = [x + dx, y + dy];
+    return state;
   },
   zoom: inOrOut => state => {
     if (inOrOut === "in") {
@@ -35,11 +36,12 @@ const cameraActions = {
     else if (inOrOut === "out") {
       state.camera.zoom -= 1;
     }
+    return state;
   }
 }
 
 export const applyCameraAction = (actionName, ...args) => state => {
-  cameraActions[actionName](...args)(state);
+  return cameraActions[actionName](...args)(state);
 };
 
 export function draw(sketch, state) {
